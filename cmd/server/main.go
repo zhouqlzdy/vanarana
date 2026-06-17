@@ -38,8 +38,8 @@ func main() {
 	}
 	defer st.Close()
 
-	if err := st.RunMigrations(); err != nil {
-		log.Fatalf("run migrations: %v", err)
+	if err := st.AutoMigrate(); err != nil {
+		log.Fatalf("auto migrate: %v", err)
 	}
 
 	archiveStore, err := archive.New(cfg.ArchiveDir())

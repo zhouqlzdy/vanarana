@@ -1,79 +1,49 @@
 package store
 
 import (
-	"database/sql"
-	"fmt"
-	"io/fs"
-	"strings"
-	"time"
+	"vanarana/internal/model"
 
-	_ "github.com/go-sql-driver/mysql"
-
-	"vanarana"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 type Store struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 func New(dsn string) (*Store, error) {
-	db, err := sql.Open("mysql", dsn)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("open mysql: %w", err)
+		return nil, err
 	}
 
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
-
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("ping mysql: %w", err)
-	}
+	sqlDB, _ := db.DB()
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(5)
 
 	return &Store{db: db}, nil
 }
 
-func (s *Store) DB() *sql.DB {
+func (s *Store) DB() *gorm.DB {
 	return s.db
 }
 
 func (s *Store) Close() error {
-	return s.db.Close()
-}
-
-func (s *Store) RunMigrations() error {
-	entries, err := fs.ReadDir(vanarana.MigrationsFS, "migrations")
+	sqlDB, err := s.db.DB()
 	if err != nil {
-		return fmt.Errorf("read migrations: %w", err)
+		return err
 	}
-
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".sql") {
-			continue
-		}
-		content, err := fs.ReadFile(vanarana.MigrationsFS, "migrations/"+entry.Name())
-		if err != nil {
-			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
-		}
-
-		statements := splitSQL(string(content))
-		for i, stmt := range statements {
-			if _, err := s.db.Exec(stmt); err != nil {
-				return fmt.Errorf("execute migration %s (stmt %d): %w", entry.Name(), i+1, err)
-			}
-		}
-	}
-
-	return nil
+	return sqlDB.Close()
 }
 
-func splitSQL(sql string) []string {
-	var statements []string
-	for _, stmt := range strings.Split(sql, ";") {
-		st := strings.TrimSpace(stmt)
-		if st != "" {
-			statements = append(statements, st)
-		}
-	}
-	return statements
+func (s *Store) AutoMigrate() error {
+	return s.db.AutoMigrate(
+		&model.Repository{},
+		&model.PipelineRun{},
+		&model.ModuleReport{},
+		&model.JunitMetrics{},
+		&model.JacocoMetrics{},
+	)
 }
