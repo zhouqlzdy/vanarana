@@ -1,9 +1,5 @@
 {{define "title"}}{{.Repository.Name}} - 仓库概览 - vanarana{{end}}
 
-{{define "head"}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-{{end}}
-
 {{define "content"}}
 <div class="page-header">
     <div class="breadcrumb">
@@ -92,6 +88,7 @@
 <div class="empty-state"><p>暂无执行记录</p></div>
 {{end}}
 
+<script src="/static/js/chart.min.js"></script>
 <script>
 (async function() {
     const section = document.getElementById('charts-section');

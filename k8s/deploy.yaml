@@ -97,6 +97,25 @@ spec:
   selector:
     app: vanarana
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vanarana
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "200m"
+spec:
+  rules:
+    - host: vanarana.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vanarana
+                port:
+                  number: 8080
+---
 # MySQL Secret — create separately with actual credentials:
 # kubectl create secret generic vanarana-mysql \
 #   --from-literal=dsn='user:pass@tcp(mysql-host:3306)/vanarana?parseTime=true&charset=utf8mb4'
