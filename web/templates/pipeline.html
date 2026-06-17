@@ -1,0 +1,118 @@
+{{define "title"}}作业查询 - vanarana{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1>作业查询</h1>
+</div>
+
+<form class="search-form" method="GET" action="/pipeline">
+    <div class="form-group">
+        <label for="repo_url">仓库地址</label>
+        <select name="repo_url" id="repo_url" onchange="this.form.submit()">
+            <option value="">-- 选择仓库 --</option>
+            {{range .Repos}}
+            <option value="{{.RepoURL}}" {{if eq .RepoURL $.SelectedRepo}}selected{{end}}>
+                {{.Name}}
+            </option>
+            {{end}}
+        </select>
+    </div>
+    <div class="form-group" style="max-width:120px">
+        <label for="days">时间范围</label>
+        <select name="days" id="days" onchange="this.form.submit()">
+            <option value="1" {{if eq .SelectedDays 1}}selected{{end}}>1 天</option>
+            <option value="3" {{if eq .SelectedDays 3}}selected{{end}}>3 天</option>
+            <option value="7" {{if eq .SelectedDays 7}}selected{{end}}>7 天</option>
+            <option value="14" {{if eq .SelectedDays 14}}selected{{end}}>14 天</option>
+            <option value="30" {{if eq .SelectedDays 30}}selected{{end}}>30 天</option>
+            <option value="90" {{if eq .SelectedDays 90}}selected{{end}}>90 天</option>
+            <option value="365" {{if eq .SelectedDays 365}}selected{{end}}>全部</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="pipeline_job_name">作业名称（可选）</label>
+        <input type="text" id="pipeline_job_name" name="pipeline_job_name"
+               value="{{.SelectedJob}}" placeholder="留空显示全部作业">
+    </div>
+    <button type="submit" class="btn btn-primary">查询</button>
+</form>
+
+{{if .Searched}}
+<hr class="divider">
+
+<div class="results-header">
+    <h2>
+        {{if .SelectedJob}}作业 "{{.SelectedJob}}"{{else}}全部作业{{end}}
+        <span class="results-subtitle">— 最近 {{.SelectedDays}} 天</span>
+    </h2>
+    <span class="results-count">共 {{len .Runs}} 次执行</span>
+</div>
+
+{{if .Runs}}
+{{range .Runs}}
+<div class="run-card">
+    <div class="run-header">
+        <span class="run-job">{{.PipelineJobName}}</span>
+        <span class="run-build">Build #{{.BuildID}}</span>
+        {{if .Branch}}<span class="run-branch">{{.Branch}}</span>{{end}}
+        {{if .CommitHash}}<span class="run-commit">{{printf "%.7s" .CommitHash}}</span>{{end}}
+        <span class="run-time">{{.TriggeredAt.Format "2006-01-02 15:04"}}</span>
+        <span class="badge {{if eq .Status "completed"}}badge-success{{else if eq .Status "processing"}}badge-warning{{else}}badge-danger{{end}}">{{.Status}}</span>
+    </div>
+    {{if .Modules}}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>模块</th>
+                <th>用例数</th>
+                <th>通过</th>
+                <th>失败</th>
+                <th>通过率</th>
+                <th>行覆盖率</th>
+                <th>分支覆盖率</th>
+                <th>指令覆盖率</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Modules}}
+            <tr>
+                <td class="module-name">{{.ModuleName}}</td>
+                <td>{{.TotalTests}}</td>
+                <td>{{.Passed}}</td>
+                <td class="{{if gt .Failures 0}}text-danger{{end}}">{{.Failures}}</td>
+                <td>
+                    <span class="{{if lt .SuccessRate 80.0}}text-danger{{else if lt .SuccessRate 95.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .SuccessRate}}
+                    </span>
+                </td>
+                <td>
+                    <span class="{{if lt .LineCoverage 50.0}}text-danger{{else if lt .LineCoverage 80.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .LineCoverage}}
+                    </span>
+                </td>
+                <td>
+                    <span class="{{if lt .BranchCoverage 40.0}}text-danger{{else if lt .BranchCoverage 70.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .BranchCoverage}}
+                    </span>
+                </td>
+                <td>
+                    <span class="{{if lt .InstructionCoverage 60.0}}text-danger{{else if lt .InstructionCoverage 80.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .InstructionCoverage}}
+                    </span>
+                </td>
+                <td><a href="/report/{{.ID}}" class="btn btn-sm">详情</a></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{end}}
+</div>
+{{end}}
+{{else}}
+<div class="empty-state">
+    <p>所选时间范围内暂无执行记录。</p>
+</div>
+{{end}}
+{{end}}
+{{end}}

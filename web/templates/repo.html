@@ -1,0 +1,198 @@
+{{define "title"}}{{.Repository.Name}} - 仓库概览 - vanarana{{end}}
+
+{{define "head"}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">vanarana</a>
+        <span class="bread-sep">›</span>
+        <span>{{.Repository.Name}}</span>
+    </div>
+    <h1>{{.Repository.Name}}</h1>
+    <div class="repo-url">{{.Repository.RepoURL}}</div>
+</div>
+
+<div class="time-selector">
+    <label>时间范围：</label>
+    <a href="?days=1" class="chip {{if eq .Days 1}}chip-active{{end}}">1天</a>
+    <a href="?days=3" class="chip {{if eq .Days 3}}chip-active{{end}}">3天</a>
+    <a href="?days=7" class="chip {{if eq .Days 7}}chip-active{{end}}">7天</a>
+    <a href="?days=14" class="chip {{if eq .Days 14}}chip-active{{end}}">14天</a>
+    <a href="?days=30" class="chip {{if eq .Days 30}}chip-active{{end}}">30天</a>
+    <span style="margin-left:12px;font-size:13px;color:#888">
+</span>
+</div>
+
+<div id="charts-section">
+    <div class="charts-loading">加载趋势数据...</div>
+</div>
+
+<hr class="divider">
+
+<h2>最近 {{.Days}} 天执行记录</h2>
+{{if .Runs}}
+{{range .Runs}}
+<div class="run-card">
+    <div class="run-header">
+        <span class="run-job"><a href="/run/{{.PipelineJobName}}/{{.BuildID}}" style="color:inherit;text-decoration:none">{{.PipelineJobName}} #{{.BuildID}}</a></span>
+        <span class="run-build">Build #{{.BuildID}}</span>
+        {{if .Branch}}<span class="run-branch">{{.Branch}}</span>{{end}}
+        {{if .CommitHash}}<span class="run-commit">{{printf "%.7s" .CommitHash}}</span>{{end}}
+        <span class="run-time">{{.TriggeredAt.Format "2006-01-02 15:04"}}</span>
+        <span class="badge {{if eq .Status "completed"}}badge-success{{else if eq .Status "processing"}}badge-warning{{else}}badge-danger{{end}}">{{.Status}}</span>
+    </div>
+    {{if .Modules}}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>模块</th>
+                <th>用例数</th>
+                <th>通过</th>
+                <th>失败</th>
+                <th>通过率</th>
+                <th>行覆盖率</th>
+                <th>分支覆盖率</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Modules}}
+            <tr>
+                <td class="module-name">{{.ModuleName}}</td>
+                <td>{{.TotalTests}}</td>
+                <td>{{.Passed}}</td>
+                <td class="{{if gt .Failures 0}}text-danger{{end}}">{{.Failures}}</td>
+                <td>
+                    <span class="{{if lt .SuccessRate 80.0}}text-danger{{else if lt .SuccessRate 95.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .SuccessRate}}
+                    </span>
+                </td>
+                <td>
+                    <span class="{{if lt .LineCoverage 50.0}}text-danger{{else if lt .LineCoverage 80.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .LineCoverage}}
+                    </span>
+                </td>
+                <td>
+                    <span class="{{if lt .BranchCoverage 40.0}}text-danger{{else if lt .BranchCoverage 70.0}}text-warning{{else}}text-success{{end}}">
+                        {{printf "%.1f%%" .BranchCoverage}}
+                    </span>
+                </td>
+                <td><a href="/report/{{.ID}}" class="btn btn-sm">详情</a></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{end}}
+</div>
+{{end}}
+{{else}}
+<div class="empty-state"><p>暂无执行记录</p></div>
+{{end}}
+
+<script>
+(async function() {
+    const section = document.getElementById('charts-section');
+    try {
+        const resp = await fetch('/api/v1/repositories/{{.Repository.ID}}/trends?days={{.Days}}');
+        const data = await resp.json();
+        const modules = data.modules;
+        const moduleNames = Object.keys(modules).sort();
+        if (moduleNames.length === 0) {
+            section.innerHTML = '<p class="empty-state">暂无趋势数据</p>';
+            return;
+        }
+
+        const colors = ['#e94560','#1a73e8','#2e7d32','#e65100','#8e24aa','#00838f','#c62828','#4527a0'];
+        const builds = [...new Set(moduleNames.flatMap(m => modules[m].map(p => p.build_id)))].sort((a,b) => (parseInt(a)||0)-(parseInt(b)||0));
+
+        // Build toggles
+        let toggleBar = '<div class="toggle-bar"><span style="font-size:13px;color:#666;margin-right:8px">模块：</span>';
+        moduleNames.forEach((m, i) => {
+            toggleBar += '<label class="toggle-chip toggle-on" data-mod="'+m+'" style="border-color:'+colors[i%colors.length]+'"><input type="checkbox" checked> '+m+'</label>';
+        });
+        toggleBar += '</div>';
+        section.innerHTML = toggleBar;
+
+        // Chart containers
+        section.innerHTML += '<div class="chart-card"><h3>用例数 &amp; 通过率</h3><div class="chart-col" style="min-height:320px"><canvas id="chart1"></canvas></div></div>';
+        section.innerHTML += '<div class="chart-card"><h3>行覆盖率</h3><div class="chart-col" style="min-height:260px"><canvas id="chart2"></canvas></div></div>';
+
+        // Build datasets
+        function buildDatasets(metricFn) {
+            return moduleNames.map((m, i) => ({
+                label: m,
+                data: modules[m].map(metricFn),
+                borderColor: colors[i % colors.length],
+                backgroundColor: colors[i % colors.length]+'20',
+                tension: 0.3,
+                hidden: false
+            }));
+        }
+
+        const ctx1 = document.getElementById('chart1').getContext('2d');
+        const ctx2 = document.getElementById('chart2').getContext('2d');
+
+        const datasets1 = [];
+        moduleNames.forEach((m, i) => {
+            const pts = modules[m];
+            datasets1.push({ label: m+' 用例数', data: pts.map(p => p.total_tests), borderColor: colors[i%colors.length], backgroundColor: colors[i%colors.length]+'20', tension: 0.3, yAxisID: 'y' });
+            datasets1.push({ label: m+' 通过率', data: pts.map(p => p.success_rate), borderColor: colors[i%colors.length], borderDash: [5,3], backgroundColor: 'transparent', tension: 0.3, yAxisID: 'y1', spanGaps: true });
+        });
+
+        const datasets2 = moduleNames.map((m, i) => ({
+            label: m,
+            data: modules[m].map(p => p.line_coverage),
+            borderColor: colors[i % colors.length],
+            backgroundColor: colors[i % colors.length]+'40',
+            tension: 0.3, fill: false
+        }));
+
+        const chart1 = new Chart(ctx1, {
+            type: 'line',
+            data: { labels: builds, datasets: datasets1 },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                    y: { type: 'linear', position: 'left', title: { display: true, text: '用例数' } },
+                    y1: { type: 'linear', position: 'right', title: { display: true, text: '通过率 %' }, min: 0, max: 100, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+
+        const chart2 = new Chart(ctx2, {
+            type: 'line',
+            data: { labels: builds, datasets: datasets2 },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { min: 0, max: 100, title: { display: true, text: '覆盖率 %' } } }
+            }
+        });
+
+        // Toggle logic
+        section.querySelectorAll('.toggle-chip input').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const mod = this.parentElement.dataset.mod;
+                const on = this.checked;
+                this.parentElement.classList.toggle('toggle-on', on);
+                [chart1, chart2].forEach(chart => {
+                    chart.data.datasets.forEach(ds => {
+                        if (ds.label.startsWith(mod) || ds.label === mod) ds.hidden = !on;
+                    });
+                    chart.update();
+                });
+            });
+        });
+
+    } catch(e) {
+        section.innerHTML = '<p class="empty-state">加载趋势失败</p>';
+    }
+})();
+</script>
+{{end}}

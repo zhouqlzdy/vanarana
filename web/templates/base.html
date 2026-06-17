@@ -1,0 +1,29 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}vanarana{{end}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {{block "head" .}}{{end}}
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-brand">
+            <a href="/">vanarana</a>
+        </div>
+        <div class="nav-links">
+            <a href="/">仓库列表</a>
+            <a href="/pipeline">作业查询</a>
+        </div>
+    </nav>
+    <main class="main-content">
+        {{block "content" .}}{{end}}
+    </main>
+    <footer class="footer">
+        vanarana &mdash; unit test report manager
+    </footer>
+</body>
+</html>
+{{end}}

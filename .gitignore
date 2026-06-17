@@ -1,0 +1,23 @@
+# Binary
+vanarana
+*.exe
+
+# Data
+data/
+
+# Sample files
+*.tar.gz
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+._*
+
+# Temp
+tmp/

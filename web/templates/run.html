@@ -1,0 +1,77 @@
+{{define "title"}}{{.JobName}} #{{.BuildID}} - 执行详情 - vanarana{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">vanarana</a>
+        {{if .Repository}}
+        <span class="bread-sep">›</span>
+        <a href="/repo/{{.Repository.ID}}">{{.Repository.Name}}</a>
+        {{end}}
+        <span class="bread-sep">›</span>
+        <span>{{.JobName}} #{{.BuildID}}</span>
+    </div>
+    <h1>{{.JobName}} <span style="font-weight:400;color:#888;font-size:18px">#{{.BuildID}}</span></h1>
+    {{if .Repository}}
+    <div class="repo-url">{{.Repository.RepoURL}}</div>
+    {{end}}
+</div>
+
+{{if .Runs}}
+{{range .Runs}}
+<div class="run-meta">
+    {{if .Branch}}<span class="run-branch">{{.Branch}}</span>{{end}}
+    {{if .CommitHash}}<span class="run-commit">{{.CommitHash}}</span>{{end}}
+    <span class="run-time">{{.TriggeredAt.Format "2006-01-02 15:04:05"}}</span>
+    <span class="badge {{if eq .Status "completed"}}badge-success{{else if eq .Status "processing"}}badge-warning{{else}}badge-danger{{end}}">{{.Status}}</span>
+</div>
+
+<h2>模块报告</h2>
+<div class="results-count">{{len .Modules}} 个模块</div>
+{{if .Modules}}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>模块</th>
+            <th>用例数</th>
+            <th>通过</th>
+            <th>失败</th>
+            <th>通过率</th>
+            <th>行覆盖率</th>
+            <th>分支覆盖率</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Modules}}
+        <tr>
+            <td class="module-name">{{.ModuleName}}</td>
+            <td>{{.TotalTests}}</td>
+            <td>{{.Passed}}</td>
+            <td class="{{if gt .Failures 0}}text-danger{{end}}">{{.Failures}}</td>
+            <td>
+                <span class="{{if lt .SuccessRate 80.0}}text-danger{{else if lt .SuccessRate 95.0}}text-warning{{else}}text-success{{end}}">
+                    {{printf "%.1f%%" .SuccessRate}}
+                </span>
+            </td>
+            <td>
+                <span class="{{if lt .LineCoverage 50.0}}text-danger{{else if lt .LineCoverage 80.0}}text-warning{{else}}text-success{{end}}">
+                    {{printf "%.1f%%" .LineCoverage}}
+                </span>
+            </td>
+            <td>
+                <span class="{{if lt .BranchCoverage 40.0}}text-danger{{else if lt .BranchCoverage 70.0}}text-warning{{else}}text-success{{end}}">
+                    {{printf "%.1f%%" .BranchCoverage}}
+                </span>
+            </td>
+            <td><a href="/report/{{.ID}}" class="btn btn-sm">详情</a></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
+{{end}}
+{{else}}
+<div class="empty-state"><p>该执行暂无模块报告</p></div>
+{{end}}
+{{end}}
