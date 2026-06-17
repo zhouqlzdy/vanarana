@@ -1,4 +1,4 @@
-{{define "title"}}{{.JobName}} #{{.BuildID}} - 执行详情 - vanarana{{end}}
+{{define "title"}}{{.JobName}} - 执行详情 - vanarana{{end}}
 
 {{define "content"}}
 <div class="page-header">
@@ -9,9 +9,9 @@
         <a href="/repo/{{.Repository.ID}}">{{.Repository.Name}}</a>
         {{end}}
         <span class="bread-sep">›</span>
-        <span>{{.JobName}} #{{.BuildID}}</span>
+        <span>{{.JobName}}</span>
     </div>
-    <h1>{{.JobName}} <span style="font-weight:400;color:#888;font-size:18px">#{{.BuildID}}</span></h1>
+    <h1>{{.JobName}}</h1>
     {{if .Repository}}
     <div class="repo-url">{{.Repository.RepoURL}}</div>
     {{end}}

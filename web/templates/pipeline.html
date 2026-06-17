@@ -53,7 +53,6 @@
 <div class="run-card">
     <div class="run-header">
         <span class="run-job">{{.PipelineJobName}}</span>
-        <span class="run-build">Build #{{.BuildID}}</span>
         {{if .Branch}}<span class="run-branch">{{.Branch}}</span>{{end}}
         {{if .CommitHash}}<span class="run-commit">{{printf "%.7s" .CommitHash}}</span>{{end}}
         <span class="run-time">{{.TriggeredAt.Format "2006-01-02 15:04"}}</span>

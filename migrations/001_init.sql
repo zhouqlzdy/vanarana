@@ -13,12 +13,12 @@ CREATE TABLE IF NOT EXISTS vanarana_pipeline_runs (
     pipeline_job_name   VARCHAR(255) NOT NULL,
     branch              VARCHAR(255) NOT NULL DEFAULT '',
     commit_hash         VARCHAR(64) NOT NULL DEFAULT '',
-    build_id            VARCHAR(128) NOT NULL,
+    build_id            VARCHAR(128) NOT NULL DEFAULT '',
     status              VARCHAR(20) NOT NULL DEFAULT 'processing',
     triggered_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (repo_id) REFERENCES vanarana_repositories(id),
-    UNIQUE KEY uk_run (repo_id, pipeline_job_name, build_id)
+    UNIQUE KEY uk_run (repo_id, pipeline_job_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS vanarana_module_reports (

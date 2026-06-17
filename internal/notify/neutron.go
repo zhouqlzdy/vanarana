@@ -25,12 +25,12 @@ func New(apiURL, baseURL string) *NeutronClient {
 	}
 }
 
-func (n *NeutronClient) SendReportLink(jobName, buildID string) {
+func (n *NeutronClient) SendReportLink(jobName string) {
 	if n.apiURL == "" {
 		return
 	}
 
-	reportURL := fmt.Sprintf("%s/run/%s/%s", n.baseURL, jobName, buildID)
+	reportURL := fmt.Sprintf("%s/run/%s", n.baseURL, jobName)
 	payload := map[string]string{
 		"report_url": reportURL,
 	}
@@ -51,6 +51,6 @@ func (n *NeutronClient) SendReportLink(jobName, buildID string) {
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("notify: neutron returned %d for %s", resp.StatusCode, url)
 	} else {
-		log.Printf("notify: report link sent to neutron for %s/%s → %s", jobName, buildID, reportURL)
+		log.Printf("notify: report link sent to neutron for %s → %s", jobName, reportURL)
 	}
 }

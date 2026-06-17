@@ -5,8 +5,8 @@
     <h1>{{.ModuleReport.ModuleName}}</h1>
     <div class="breadcrumb">
         {{if .Repository}}<a href="/repo/{{.Repository.ID}}">{{.Repository.Name}}</a>{{end}}
-        {{if .PipelineRun}}<span class="bread-sep">›</span> <a href="/run/{{.PipelineRun.PipelineJobName}}/{{.PipelineRun.BuildID}}">{{.PipelineRun.PipelineJobName}} #{{.PipelineRun.BuildID}}</a>{{end}}
-        <span class="bread-sep">›</span> <span>#{{.PipelineRun.BuildID}}</span>
+        {{if .PipelineRun}}<span class="bread-sep">›</span> <a href="/run/{{.PipelineRun.PipelineJobName}}">{{.PipelineRun.PipelineJobName}}</a>{{end}}
+        <span class="bread-sep">›</span> <span>{{.ModuleReport.ModuleName}}</span>
         <span class="badge {{if eq .ModuleReport.Status "completed"}}badge-success{{else if eq .ModuleReport.Status "processing"}}badge-warning{{else}}badge-danger{{end}}">{{.ModuleReport.Status}}</span>
     </div>
 </div>

@@ -184,6 +184,6 @@ func (w *ParserWorker) updatePipelineRunStatus(ctx context.Context, pipelineRunI
 
 	pr, err := w.store.GetPipelineRun(ctx, pipelineRunID)
 	if err == nil && pr != nil {
-		w.neutron.SendReportLink(pr.PipelineJobName, pr.BuildID)
+		w.neutron.SendReportLink(pr.PipelineJobName)
 	}
 }

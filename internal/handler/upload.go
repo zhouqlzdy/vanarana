@@ -52,8 +52,8 @@ func (h *UploadHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		CommitHash:      r.FormValue("commit_hash"),
 	}
 
-	if req.RepoURL == "" || req.ModuleName == "" || req.PipelineJobName == "" || req.BuildID == "" {
-		writeError(w, http.StatusBadRequest, "repo_url, module_name, pipeline_job_name, build_id are required")
+	if req.RepoURL == "" || req.ModuleName == "" || req.PipelineJobName == "" {
+		writeError(w, http.StatusBadRequest, "repo_url, module_name, pipeline_job_name are required")
 		return
 	}
 

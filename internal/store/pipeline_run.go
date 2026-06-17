@@ -10,7 +10,7 @@ func (s *Store) UpsertPipelineRun(ctx context.Context, repoID int, jobName, buil
 	result, err := s.db.ExecContext(ctx,
 		`INSERT INTO vanarana_pipeline_runs (repo_id, pipeline_job_name, build_id, branch, commit_hash, status)
 		 VALUES (?, ?, ?, ?, ?, ?)
-		 ON DUPLICATE KEY UPDATE branch = VALUES(branch), commit_hash = VALUES(commit_hash)`,
+		 ON DUPLICATE KEY UPDATE build_id = VALUES(build_id), branch = VALUES(branch), commit_hash = VALUES(commit_hash)`,
 		repoID, jobName, buildID, branch, commitHash, model.StatusProcessing,
 	)
 	if err != nil {
@@ -19,19 +19,18 @@ func (s *Store) UpsertPipelineRun(ctx context.Context, repoID int, jobName, buil
 
 	id, _ := result.LastInsertId()
 	if id == 0 {
-		// ON DUPLICATE KEY UPDATE didn't insert — fetch existing
-		return s.GetPipelineRunByKey(ctx, repoID, jobName, buildID)
+		return s.GetPipelineRunByKey(ctx, repoID, jobName)
 	}
 
 	return s.GetPipelineRun(ctx, int(id))
 }
 
-func (s *Store) GetPipelineRunByKey(ctx context.Context, repoID int, jobName, buildID string) (*model.PipelineRun, error) {
+func (s *Store) GetPipelineRunByKey(ctx context.Context, repoID int, jobName string) (*model.PipelineRun, error) {
 	pr := &model.PipelineRun{}
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, repo_id, pipeline_job_name, branch, commit_hash, build_id, status, triggered_at, created_at
-		 FROM vanarana_pipeline_runs WHERE repo_id = ? AND pipeline_job_name = ? AND build_id = ?`,
-		repoID, jobName, buildID,
+		 FROM vanarana_pipeline_runs WHERE repo_id = ? AND pipeline_job_name = ?`,
+		repoID, jobName,
 	).Scan(&pr.ID, &pr.RepoID, &pr.PipelineJobName, &pr.Branch, &pr.CommitHash, &pr.BuildID, &pr.Status, &pr.TriggeredAt, &pr.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -44,6 +43,18 @@ func (s *Store) GetPipelineRun(ctx context.Context, id int) (*model.PipelineRun,
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, repo_id, pipeline_job_name, branch, commit_hash, build_id, status, triggered_at, created_at
 		 FROM vanarana_pipeline_runs WHERE id = ?`, id,
+	).Scan(&pr.ID, &pr.RepoID, &pr.PipelineJobName, &pr.Branch, &pr.CommitHash, &pr.BuildID, &pr.Status, &pr.TriggeredAt, &pr.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return pr, nil
+}
+
+func (s *Store) GetPipelineRunByJobName(ctx context.Context, jobName string) (*model.PipelineRun, error) {
+	pr := &model.PipelineRun{}
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id, repo_id, pipeline_job_name, branch, commit_hash, build_id, status, triggered_at, created_at
+		 FROM vanarana_pipeline_runs WHERE pipeline_job_name = ?`, jobName,
 	).Scan(&pr.ID, &pr.RepoID, &pr.PipelineJobName, &pr.Branch, &pr.CommitHash, &pr.BuildID, &pr.Status, &pr.TriggeredAt, &pr.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -137,17 +148,4 @@ func (s *Store) ListPipelineRunsByJobName(
 		runs = append(runs, pr)
 	}
 	return runs, rows.Err()
-}
-
-func (s *Store) GetPipelineRunByJobBuild(ctx context.Context, jobName, buildID string) (*model.PipelineRun, error) {
-	pr := &model.PipelineRun{}
-	err := s.db.QueryRowContext(ctx,
-		`SELECT id, repo_id, pipeline_job_name, branch, commit_hash, build_id, status, triggered_at, created_at
-		 FROM vanarana_pipeline_runs WHERE pipeline_job_name = ? AND build_id = ?`,
-		jobName, buildID,
-	).Scan(&pr.ID, &pr.RepoID, &pr.PipelineJobName, &pr.Branch, &pr.CommitHash, &pr.BuildID, &pr.Status, &pr.TriggeredAt, &pr.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return pr, nil
 }

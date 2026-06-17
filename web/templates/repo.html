@@ -37,7 +37,7 @@
 {{range .Runs}}
 <div class="run-card">
     <div class="run-header">
-        <span class="run-job"><a href="/run/{{.PipelineJobName}}/{{.BuildID}}" style="color:inherit;text-decoration:none">{{.PipelineJobName}} #{{.BuildID}}</a></span>
+        <span class="run-job"><a href="/run/{{.PipelineJobName}}" style="color:inherit;text-decoration:none">{{.PipelineJobName}}</a></span>
         <span class="run-build">Build #{{.BuildID}}</span>
         {{if .Branch}}<span class="run-branch">{{.Branch}}</span>{{end}}
         {{if .CommitHash}}<span class="run-commit">{{printf "%.7s" .CommitHash}}</span>{{end}}

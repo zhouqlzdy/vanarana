@@ -80,7 +80,7 @@ func main() {
 	r.Get("/pipeline", pagesHandler.PipelinePage)
 	r.Get("/report/{id}", pagesHandler.ReportPage)
 	r.Get("/repo/{id}", pagesHandler.RepoPage)
-	r.Get("/run/{jobName}/{buildId}", pagesHandler.RunPage)
+	r.Get("/run/{jobName}", pagesHandler.RunPage)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/reports", uploadHandler.Handle)

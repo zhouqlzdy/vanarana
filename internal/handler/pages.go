@@ -226,9 +226,8 @@ func (h *PagesHandler) RepoPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *PagesHandler) RunPage(w http.ResponseWriter, r *http.Request) {
 	jobName := chi.URLParam(r, "jobName")
-	buildID := chi.URLParam(r, "buildId")
 
-	pr, err := h.store.GetPipelineRunByJobBuild(r.Context(), jobName, buildID)
+	pr, err := h.store.GetPipelineRunByJobName(r.Context(), jobName)
 	if err != nil {
 		http.Error(w, "execution not found", http.StatusNotFound)
 		return
@@ -240,7 +239,6 @@ func (h *PagesHandler) RunPage(w http.ResponseWriter, r *http.Request) {
 
 	h.runTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"JobName":       jobName,
-		"BuildID":       buildID,
 		"Repository":    repo,
 		"Runs":          h.enrichRuns(r.Context(), runs),
 	})
