@@ -153,3 +153,24 @@ vanarana/
 ## 技术栈
 
 Go · MySQL · Chi Router · html/template · embed · Chart.js · Docker
+
+## K8s 部署
+
+```bash
+# 1. 创建 Secret
+kubectl create secret generic vanarana-mysql \
+  --from-literal=dsn='user:pass@tcp(mysql-host:3306)/vanarana?parseTime=true&charset=utf8mb4'
+
+# 2. 部署（Deployment + PVC + Service + ConfigMap）
+kubectl apply -f k8s/deploy.yaml
+```
+
+| 资源 | 说明 |
+|------|------|
+| `vanarana-data` PVC | 50Gi RWO，存放归档（tar.gz）和解压缓存 |
+| `vanarana-config` ConfigMap | 端口、路径、上传限制等 |
+| `vanarana-mysql` Secret | MySQL 连接串 |
+| `vanarana` Deployment | 单副本，128Mi-512Mi 内存 |
+| `vanarana` Service | ClusterIP :8080 |
+
+MySQL 需独立部署（外部或集群内 StatefulSet），服务启动时自动执行表迁移。

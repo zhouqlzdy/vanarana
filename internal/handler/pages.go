@@ -22,7 +22,6 @@ type PagesHandler struct {
 	pipelineTmpl  *template.Template
 	reportTmpl    *template.Template
 	repoTmpl      *template.Template
-	jobTmpl       *template.Template
 	runTmpl       *template.Template
 }
 
@@ -41,7 +40,6 @@ func NewPagesHandler(s *store.Store) (*PagesHandler, error) {
 		pipelineTmpl: parsePattern("templates/base.html", "templates/pipeline.html"),
 		reportTmpl:   parsePattern("templates/base.html", "templates/report.html"),
 		repoTmpl:     parsePattern("templates/base.html", "templates/repo.html"),
-		jobTmpl:      parsePattern("templates/base.html", "templates/job.html"),
 		runTmpl:      parsePattern("templates/base.html", "templates/run.html"),
 	}, nil
 }

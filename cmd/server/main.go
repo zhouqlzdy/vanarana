@@ -38,7 +38,7 @@ func main() {
 	}
 	defer st.Close()
 
-	if err := st.RunMigrations("migrations"); err != nil {
+	if err := st.RunMigrations(); err != nil {
 		log.Fatalf("run migrations: %v", err)
 	}
 

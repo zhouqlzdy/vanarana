@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vanarana-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vanarana-config
+data:
+  VANARANA_PORT: "8080"
+  VANARANA_DATA_DIR: "/data"
+  VANARANA_MAX_UPLOAD_MB: "100"
+  VANARANA_CACHE_MAX_MB: "2048"
+  VANARANA_BASE_URL: "https://vanarana.example.com"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vanarana
+  labels:
+    app: vanarana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vanarana
+  template:
+    metadata:
+      labels:
+        app: vanarana
+    spec:
+      containers:
+        - name: vanarana
+          image: telepathy/vanarana:v0.0.1
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: vanarana-config
+          env:
+            - name: VANARANA_MYSQL_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: vanarana-mysql
+                  key: dsn
+            - name: VANARANA_NEUTRON_URL
+              valueFrom:
+                secretKeyRef:
+                  name: vanarana-neutron
+                  key: url
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vanarana-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanarana
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: vanarana
+---
+# MySQL Secret — create separately with actual credentials:
+# kubectl create secret generic vanarana-mysql \
+#   --from-literal=dsn='user:pass@tcp(mysql-host:3306)/vanarana?parseTime=true&charset=utf8mb4'
+#
+# Neutron Secret (optional):
+# kubectl create secret generic vanarana-neutron \
+#   --from-literal=url='http://neutron-api:8888'

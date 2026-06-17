@@ -3,12 +3,13 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io/fs"
 	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"vanarana"
 )
 
 type Store struct {
@@ -40,17 +41,17 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) RunMigrations(migrationsDir string) error {
-	entries, err := os.ReadDir(migrationsDir)
+func (s *Store) RunMigrations() error {
+	entries, err := fs.ReadDir(vanarana.MigrationsFS, "migrations")
 	if err != nil {
-		return fmt.Errorf("read migrations dir: %w", err)
+		return fmt.Errorf("read migrations: %w", err)
 	}
 
 	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".sql" {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".sql") {
 			continue
 		}
-		content, err := os.ReadFile(filepath.Join(migrationsDir, entry.Name()))
+		content, err := fs.ReadFile(vanarana.MigrationsFS, "migrations/"+entry.Name())
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
 		}
