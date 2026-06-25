@@ -58,8 +58,8 @@ func (h *UploadHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate file fields - at least one of junit/jacoco required
-	_, hasJunit := r.FormFile("junit")
-	_, hasJacoco := r.FormFile("jacoco")
+	_, _, hasJunit := r.FormFile("junit")
+	_, _, hasJacoco := r.FormFile("jacoco")
 	if hasJunit != nil && hasJacoco != nil {
 		writeError(w, http.StatusBadRequest, "at least one of junit or jacoco file is required")
 		return

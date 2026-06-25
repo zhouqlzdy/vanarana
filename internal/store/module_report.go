@@ -11,6 +11,19 @@ import (
 )
 
 func (s *Store) CreateModuleReport(ctx context.Context, pipelineRunID int, moduleName, junitArchive, jacocoArchive, otherArchive string) (*model.ModuleReport, error) {
+	// Merge with existing archive fields to avoid overwriting on partial re-upload
+	if existing, err := s.GetModuleReportByKey(ctx, pipelineRunID, moduleName); err == nil {
+		if junitArchive == "" {
+			junitArchive = existing.JunitArchive
+		}
+		if jacocoArchive == "" {
+			jacocoArchive = existing.JacocoArchive
+		}
+		if otherArchive == "" {
+			otherArchive = existing.OtherArchive
+		}
+	}
+
 	mr := &model.ModuleReport{
 		PipelineRunID: pipelineRunID,
 		ModuleName:    moduleName,
